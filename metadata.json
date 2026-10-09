@@ -1,0 +1,6 @@
+{
+  "name": "Driver Express",
+  "description": "High-efficiency Android delivery driver application optimized for fast, one-handed operation with large tactile controls, Arabic RTL support, and real-time delivery state transitions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Driver Profile Schema Validation
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.phone is string && data.phone.size() <= 30 &&
+             data.status in ['AVAILABLE', 'BUSY', 'OFFLINE'] &&
+             (!('vehicleType' in data) || data.vehicleType in ['MOTORCYCLE', 'CAR', 'BICYCLE', 'VAN']) &&
+             (!('vehiclePlate' in data) || (data.vehiclePlate is string && data.vehiclePlate.size() <= 50)) &&
+             (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5)) &&
+             (!('totalDeliveries' in data) || (data.totalDeliveries is int && data.totalDeliveries >= 0)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    // Delivery Order Schema Validation
+    function isValidDeliveryOrder(data) {
+      return data.orderNumber is string && data.orderNumber.size() <= 50 &&
+             data.storeName is string && data.storeName.size() <= 120 &&
+             data.deliveryAddress is string && data.deliveryAddress.size() <= 300 &&
+             data.status in ['ASSIGNED', 'PICKED_UP', 'ON_THE_WAY', 'DELIVERED', 'CANCELLED'] &&
+             data.orderTotal is number && data.orderTotal >= 0 &&
+             data.driverEarnings is number && data.driverEarnings >= 0 &&
+             (!('driverId' in data) || data.driverId == null || (data.driverId is string && data.driverId.size() <= 128)) &&
+             (!('paymentMethod' in data) || data.paymentMethod in ['CASH_ON_DELIVERY', 'PREPAID']) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             (!('updatedAt' in data) || (data.updatedAt is timestamp && data.updatedAt <= request.time));
+    }
+
+    // Driver Profile Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow create: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       isValidUserProfile(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'name', 'phone', 'status', 'vehicleType', 'vehiclePlate', 'rating', 'totalDeliveries', 'updatedAt'
+                       ]);
+      allow delete: if false;
+    }
+
+    // Delivery Orders Collection
+    match /orders/{orderId} {
+      allow get: if isSignedIn() && isValidId(orderId) && (
+        resource.data.driverId == request.auth.uid ||
+        resource.data.driverId == null ||
+        resource.data.driverId == ''
+      );
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(orderId) && isValidDeliveryOrder(incoming());
+      allow update: if isSignedIn() && isValidId(orderId) && isValidDeliveryOrder(incoming()) && (
+        // Case 1: Driver accepts an unassigned order
+        ((!('driverId' in existing()) || existing().driverId == null || existing().driverId == '') &&
+         incoming().driverId == request.auth.uid &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['driverId', 'status', 'updatedAt'])) ||
+        // Case 2: Assigned driver advances delivery state
+        (existing().driverId == request.auth.uid &&
+         incoming().driverId == existing().driverId &&
+         incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+      );
+      allow delete: if false;
+    }
+  }
+}

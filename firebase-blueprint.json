@@ -1,0 +1,134 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Driver profile storing vehicle and availability status.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID."
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the driver."
+        },
+        "phone": {
+          "type": "string",
+          "description": "Registered driver phone number."
+        },
+        "rating": {
+          "type": "number",
+          "description": "Driver customer service rating."
+        },
+        "totalDeliveries": {
+          "type": "integer",
+          "description": "Lifetime count of completed deliveries."
+        },
+        "vehicleType": {
+          "type": "string",
+          "enum": ["MOTORCYCLE", "CAR", "BICYCLE", "VAN"],
+          "description": "Type of transport vehicle used for delivery."
+        },
+        "vehiclePlate": {
+          "type": "string",
+          "description": "Registered license plate number."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["AVAILABLE", "BUSY", "OFFLINE"],
+          "description": "Current availability state of the driver."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when profile was created via server timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when profile was last updated via server timestamp."
+        }
+      },
+      "required": ["userId", "name", "phone", "status", "createdAt"]
+    },
+    "DeliveryOrder": {
+      "title": "DeliveryOrder",
+      "description": "An order task for pickup and delivery.",
+      "type": "object",
+      "properties": {
+        "orderNumber": {
+          "type": "string",
+          "description": "Human-readable order identifier."
+        },
+        "storeName": {
+          "type": "string",
+          "description": "Store name for pickup."
+        },
+        "pickupAddress": {
+          "type": "string",
+          "description": "Store pickup address."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of customer recipient."
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Phone number of customer recipient."
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Customer dropoff address."
+        },
+        "driverId": {
+          "type": "string",
+          "description": "Firebase UID of assigned delivery driver, or empty if available."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ASSIGNED", "PICKED_UP", "ON_THE_WAY", "DELIVERED", "CANCELLED"],
+          "description": "Current delivery lifecycle status."
+        },
+        "orderTotal": {
+          "type": "number",
+          "description": "Total order price in SAR."
+        },
+        "driverEarnings": {
+          "type": "number",
+          "description": "Driver payout earnings in SAR."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["CASH_ON_DELIVERY", "PREPAID"],
+          "description": "Payment type for the order."
+        },
+        "distanceKm": {
+          "type": "number",
+          "description": "Calculated trip distance in kilometers."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of order creation."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of status transition update."
+        }
+      },
+      "required": ["orderNumber", "storeName", "deliveryAddress", "status", "orderTotal", "driverEarnings", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Driver account document scoped by user ID."
+    },
+    "/orders/{orderId}": {
+      "schema": "DeliveryOrder",
+      "description": "Delivery order tasks available or assigned to drivers."
+    }
+  }
+}
