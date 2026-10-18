@@ -196,9 +196,8 @@ class SupabaseDriverRepository : DriverRepository {
                 ).getOrThrow().trim()
                 check(response == "true") { "تعذر إرجاع الطلب لقائمة المندوبين." }
                 refreshAll()
-                (_availableOrders.value.firstOrNull { it.id == orderId }
-                    ?: throw IllegalStateException("أُعيد إسناد الطلب لكن تعذر تحديث القائمة."))
-                    .copy(status = DeliveryStatus.CANCELLED)
+                _availableOrders.value.firstOrNull { it.id == orderId }
+                    ?: throw IllegalStateException("أُعيد إسناد الطلب لكن تعذر تحديث القائمة.")
             }
         }
 
