@@ -73,7 +73,7 @@ object DriverStrings {
     // Confirmation & dialogs
     fun confirmDeliveryTitle(ar: Boolean) = if (ar) "تأكيد إتمام التسليم" else "Confirm Delivery Complete"
     fun confirmDeliveryMsg(ar: Boolean) = if (ar) "هل قمت بتسليم الطلب للعميل واستلام المبلغ (إن وجد)؟" else "Have you handed the order to the customer and collected cash if applicable?"
-    fun cancelIssueBtn(ar: Boolean) = if (ar) "إبلاغ عن تعذر التوصيل" else "Report Issue / Cancel"
+    fun cancelIssueBtn(ar: Boolean) = if (ar) "إرجاع الطلب / إبلاغ عن مشكلة" else "Release assignment / Report issue"
     fun confirmBtn(ar: Boolean) = if (ar) "تأكيد" else "Confirm"
     fun backBtn(ar: Boolean) = if (ar) "رجوع" else "Back"
     fun closeBtn(ar: Boolean) = if (ar) "إغلاق" else "Close"
