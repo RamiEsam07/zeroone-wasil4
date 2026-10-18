@@ -103,6 +103,10 @@ class DriverViewModel(
         (repository as? SupabaseDriverRepository)?.refreshLiveData()
     }
 
+    suspend fun publishDriverLocation(latitude: Double, longitude: Double) {
+        (repository as? SupabaseDriverRepository)?.updateServerLocation(latitude, longitude)
+    }
+
     fun login(phone: String, vehicleType: VehicleType) {
         viewModelScope.launch {
             repository.login(phone, vehicleType)
