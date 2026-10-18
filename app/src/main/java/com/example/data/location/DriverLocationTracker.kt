@@ -60,8 +60,11 @@ class DriverLocationTracker(
             }.getOrDefault(false) || subscribed
         }
 
+        val now = System.currentTimeMillis()
         providers.mapNotNull { provider ->
             runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+        }.filter { location ->
+            now - location.time in 0..120_000L && location.accuracy <= 500f
         }.maxByOrNull { it.time }?.let { onLocation(it.latitude, it.longitude) }
 
         return subscribed
