@@ -151,7 +151,7 @@ private fun SupabaseDriverAuthGate(
     }
 
     LaunchedEffect(session, isLoggedIn, driverStatus) {
-        if (session != null && isLoggedIn && driverStatus == DriverStatus.AVAILABLE) {
+        if (session != null && isLoggedIn && driverStatus != DriverStatus.OFFLINE) {
             if (locationTracker.hasLocationPermission()) {
                 if (!locationTracker.start()) {
                     Toast.makeText(context, "فعّل خدمة الموقع لإرسال موقعك أثناء التوفر.", Toast.LENGTH_LONG).show()
@@ -175,7 +175,7 @@ private fun SupabaseDriverAuthGate(
                 locationTracker.stop()
             } else if (
                 event == Lifecycle.Event.ON_START &&
-                session != null && isLoggedIn && driverStatus == DriverStatus.AVAILABLE &&
+                session != null && isLoggedIn && driverStatus != DriverStatus.OFFLINE &&
                 locationTracker.hasLocationPermission()
             ) {
                 locationTracker.start()
