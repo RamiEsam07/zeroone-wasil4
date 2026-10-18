@@ -82,10 +82,9 @@ object GoogleSignInHelper {
         onAuthCancelled: () -> Unit,
         scope: CoroutineScope
     ) {
-        val clientId = try {
-            activity.getString(R.string.default_web_client_id)
-        } catch (e: Exception) {
-            onAuthError("Google Sign-In configuration missing: default_web_client_id not found")
+        val clientId = BuildConfig.GOOGLE_WEB_CLIENT_ID
+        if (clientId.isBlank()) {
+            onAuthError("Google Sign-In configuration missing: add GOOGLE_WEB_CLIENT_ID to local.properties")
             return
         }
 
