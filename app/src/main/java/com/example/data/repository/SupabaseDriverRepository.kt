@@ -185,7 +185,22 @@ class SupabaseDriverRepository : DriverRepository {
         }
 
     override suspend fun cancelDelivery(orderId: String, reason: String): Result<DeliveryOrder> =
-        Result.failure(IllegalStateException("إلغاء الإسناد من طرف المندوب يحتاج إجراءً خادمياً آمناً، ولم يُفعّل بعد."))
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val session = requireSession()
+                val response = client.rest(
+                    "rest/v1/rpc/wasil_driver_release_assignment",
+                    method = "POST",
+                    body = JSONObject().put("p_order_id", orderId).put("p_reason", reason).toString(),
+                    accessToken = session.accessToken,
+                ).getOrThrow().trim()
+                check(response == "true") { "تعذر إرجاع الطلب لقائمة المندوبين." }
+                refreshAll()
+                (_availableOrders.value.firstOrNull { it.id == orderId }
+                    ?: throw IllegalStateException("أُعيد إسناد الطلب لكن تعذر تحديث القائمة."))
+                    .copy(status = DeliveryStatus.CANCELLED)
+            }
+        }
 
     override fun getOrderById(orderId: String): DeliveryOrder? = findOrder(orderId)
 
