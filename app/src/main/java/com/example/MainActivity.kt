@@ -59,7 +59,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // Shared Firebase-backed repository instance for driver app
+        // Supabase-backed repository instance for the driver app
         val repository = SupabaseDriverRepository()
 
         setContent {
