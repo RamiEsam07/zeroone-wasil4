@@ -220,9 +220,13 @@ class SupabaseDriverRepository : DriverRepository {
     override fun toggleLanguage() { _isArabic.value = !_isArabic.value }
     override fun simulateNewIncomingOrder() { /* disabled in production */ }
 
+    suspend fun refreshLiveData() = withContext(Dispatchers.IO) { refreshAll() }
+
     private suspend fun refreshAll() {
         val session = requireSession()
         val uid = session.userId
+        val profileRows = rows("rest/v1/driver_profiles?select=is_available&profile_id=eq.$uid")
+        if (profileRows.length() > 0) serverAvailability = profileRows.getJSONObject(0).optBoolean("is_available", false)
         val available = JSONArray(
             client.rest(
                 "rest/v1/rpc/wasil_list_available_orders",
