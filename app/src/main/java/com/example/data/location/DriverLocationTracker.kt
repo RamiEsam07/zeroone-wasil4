@@ -23,7 +23,10 @@ class DriverLocationTracker(
 
     private val listener = object : LocationListener {
         override fun onLocationChanged(location: Location) {
-            onLocation(location.latitude, location.longitude)
+            val ageMs = System.currentTimeMillis() - location.time
+            if (ageMs in 0..120_000L && location.accuracy <= 500f) {
+                onLocation(location.latitude, location.longitude)
+            }
         }
 
         @Deprecated("Deprecated by Android; retained for API 24 compatibility")
