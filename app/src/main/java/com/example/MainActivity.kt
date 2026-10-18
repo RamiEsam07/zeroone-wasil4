@@ -98,6 +98,10 @@ private fun SupabaseDriverAuthGate(
     val scope = rememberCoroutineScope()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val driverStatus by viewModel.driverStatus.collectAsState()
+    var session by remember { mutableStateOf<SupabaseSession?>(null) }
+    var restoring by remember { mutableStateOf(true) }
+    var loading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     val locationTracker = remember(context, viewModel) {
         DriverLocationTracker(context) { latitude, longitude ->
             scope.launch { runCatching { viewModel.publishDriverLocation(latitude, longitude) } }
@@ -117,10 +121,6 @@ private fun SupabaseDriverAuthGate(
         }
     }
     val lifecycleOwner = LocalLifecycleOwner.current
-    var session by remember { mutableStateOf<SupabaseSession?>(null) }
-    var restoring by remember { mutableStateOf(true) }
-    var loading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     suspend fun activate(candidate: SupabaseSession): Boolean {
         SupabaseSessionProvider.session = candidate
