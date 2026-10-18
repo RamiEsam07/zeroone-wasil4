@@ -1,5 +1,7 @@
 package com.example.ui.auth
 
+import com.example.BuildConfig
+
 import android.app.Activity
 import android.content.Context
 import android.util.Log
@@ -37,7 +39,7 @@ object GoogleSignInHelper {
         }
 
         val clientId = try {
-            context.getString(R.string.default_web_client_id)
+            BuildConfig.GOOGLE_WEB_CLIENT_ID
         } catch (e: Exception) {
             Log.w(TAG, "default_web_client_id not found for auto sign-in", e)
             onUnauthenticated()
