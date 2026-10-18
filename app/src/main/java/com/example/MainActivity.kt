@@ -106,11 +106,13 @@ private fun SupabaseDriverAuthGate(
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
-        if (permissions.values.any { it }) {
+        if (permissions.values.any { it } && session != null && isLoggedIn &&
+            driverStatus != DriverStatus.OFFLINE
+        ) {
             if (!locationTracker.start()) {
                 Toast.makeText(context, "فعّل خدمة الموقع لإرسال موقعك أثناء التوفر.", Toast.LENGTH_LONG).show()
             }
-        } else {
+        } else if (!permissions.values.any { it }) {
             Toast.makeText(context, "لم يُسمح بالموقع؛ لن يعمل الإسناد التلقائي حسب القرب.", Toast.LENGTH_LONG).show()
         }
     }
