@@ -80,7 +80,7 @@ class SupabaseDriverRepository : DriverRepository {
                         accessToken = session.accessToken,
                         prefer = "return=representation",
                     ).getOrThrow()
-                } else if (vehicleType.name.lowercase() != driverRows.getJSONObject(0).optString("vehicle_type")) {
+                } else if (phone.isNotBlank() && vehicleType.name.lowercase() != driverRows.getJSONObject(0).optString("vehicle_type")) {
                     client.rest(
                         "rest/v1/driver_profiles?profile_id=eq.$uid",
                         method = "PATCH",
