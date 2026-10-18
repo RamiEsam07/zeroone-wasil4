@@ -1,6 +1,8 @@
 package com.example
 
 import android.os.Bundle
+import android.Manifest
+import android.widget.Toast
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.data.repository.SupabaseDriverRepository
+import com.example.data.location.DriverLocationTracker
+import com.example.data.model.DriverStatus
 import com.example.data.supabase.SupabaseRoleAuthenticator
 import com.example.data.supabase.SupabaseSession
 import com.example.data.supabase.SupabaseSessionProvider
@@ -29,14 +33,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.compose.rememberNavController
 import com.example.ui.navigation.DriverAppNavigation
@@ -87,6 +97,24 @@ private fun SupabaseDriverAuthGate(
     val authenticator = remember(context) { SupabaseRoleAuthenticator(context, "driver") }
     val scope = rememberCoroutineScope()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val driverStatus by viewModel.driverStatus.collectAsState()
+    val locationTracker = remember(context, viewModel) {
+        DriverLocationTracker(context) { latitude, longitude ->
+            scope.launch { runCatching { viewModel.publishDriverLocation(latitude, longitude) } }
+        }
+    }
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.values.any { it }) {
+            if (!locationTracker.start()) {
+                Toast.makeText(context, "فعّل خدمة الموقع لإرسال موقعك أثناء التوفر.", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(context, "لم يُسمح بالموقع؛ لن يعمل الإسناد التلقائي حسب القرب.", Toast.LENGTH_LONG).show()
+        }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
     var session by remember { mutableStateOf<SupabaseSession?>(null) }
     var restoring by remember { mutableStateOf(true) }
     var loading by remember { mutableStateOf(false) }
@@ -119,6 +147,44 @@ private fun SupabaseDriverAuthGate(
             authenticator.signOut(session)
             SupabaseSessionProvider.session = null
             session = null
+        }
+    }
+
+    LaunchedEffect(session, isLoggedIn, driverStatus) {
+        if (session != null && isLoggedIn && driverStatus == DriverStatus.AVAILABLE) {
+            if (locationTracker.hasLocationPermission()) {
+                if (!locationTracker.start()) {
+                    Toast.makeText(context, "فعّل خدمة الموقع لإرسال موقعك أثناء التوفر.", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                locationPermissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    )
+                )
+            }
+        } else {
+            locationTracker.stop()
+        }
+    }
+
+    DisposableEffect(lifecycleOwner, locationTracker, session, isLoggedIn, driverStatus) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                locationTracker.stop()
+            } else if (
+                event == Lifecycle.Event.ON_START &&
+                session != null && isLoggedIn && driverStatus == DriverStatus.AVAILABLE &&
+                locationTracker.hasLocationPermission()
+            ) {
+                locationTracker.start()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            locationTracker.stop()
         }
     }
 
