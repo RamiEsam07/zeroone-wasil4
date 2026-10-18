@@ -25,6 +25,7 @@ import com.example.data.supabase.SupabaseRoleAuthenticator
 import com.example.data.supabase.SupabaseSession
 import com.example.data.supabase.SupabaseSessionProvider
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -117,6 +118,15 @@ private fun SupabaseDriverAuthGate(
             authenticator.signOut(session)
             SupabaseSessionProvider.session = null
             session = null
+        }
+    }
+
+    LaunchedEffect(session, isLoggedIn) {
+        if (session != null && isLoggedIn) {
+            while (true) {
+                delay(15_000)
+                runCatching { viewModel.refreshSupabaseData() }
+            }
         }
     }
 
