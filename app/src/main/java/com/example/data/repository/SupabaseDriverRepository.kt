@@ -208,7 +208,14 @@ class SupabaseDriverRepository : DriverRepository {
     private suspend fun refreshAll() {
         val session = requireSession()
         val uid = session.userId
-        val available = rows("rest/v1/orders?select=*,store:stores(*),address:addresses(*),order_items(*)&status=eq.ready_for_pickup&driver_id=is.null&order=placed_at.asc")
+        val available = JSONArray(
+            client.rest(
+                "rest/v1/rpc/wasil_list_available_orders",
+                method = "POST",
+                body = "{}",
+                accessToken = session.accessToken,
+            ).getOrThrow()
+        )
         val active = rows("rest/v1/orders?select=*,store:stores(*),address:addresses(*),order_items(*)&driver_id=eq.$uid&status=in.(driver_assigned,picked_up,on_the_way)&order=placed_at.desc")
         val history = rows("rest/v1/orders?select=*,store:stores(*),address:addresses(*),order_items(*)&driver_id=eq.$uid&status=in.(delivered,cancelled)&order=placed_at.desc")
         _availableOrders.value = (0 until available.length()).map { available.getJSONObject(it).toDeliveryOrder() }
@@ -254,7 +261,7 @@ class SupabaseDriverRepository : DriverRepository {
             street = addressJson.optString("street"),
             streetAr = addressJson.optString("street"),
             buildingNumber = addressJson.optString("building_number"),
-            floorNumber = addressJson.optString("floor"),
+            floorNumber = addressJson.optString("floor_or_apartment"),
             apartmentNumber = addressJson.optString("apartment"),
             landmark = addressJson.optString("landmark"),
             landmarkAr = addressJson.optString("landmark"),
