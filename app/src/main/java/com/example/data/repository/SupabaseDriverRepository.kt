@@ -71,16 +71,10 @@ class SupabaseDriverRepository : DriverRepository {
                 }
 
                 val driverRows = rows("rest/v1/driver_profiles?select=*&profile_id=eq.$uid")
-                if (driverRows.length() == 0) {
-                    client.rest(
-                        "rest/v1/driver_profiles",
-                        method = "POST",
-                        body = JSONObject().put("profile_id", uid)
-                            .put("vehicle_type", vehicleType.name.lowercase()).toString(),
-                        accessToken = session.accessToken,
-                        prefer = "return=representation",
-                    ).getOrThrow()
-                } else if (phone.isNotBlank() && vehicleType.name.lowercase() != driverRows.getJSONObject(0).optString("vehicle_type")) {
+                check(driverRows.length() > 0) {
+                    "ملف المندوب لم يُنشأ من الإدارة بعد. تواصل مع مسؤول وصّل لتفعيل حسابك."
+                }
+                if (phone.isNotBlank() && vehicleType.name.lowercase() != driverRows.getJSONObject(0).optString("vehicle_type")) {
                     client.rest(
                         "rest/v1/driver_profiles?profile_id=eq.$uid",
                         method = "PATCH",
