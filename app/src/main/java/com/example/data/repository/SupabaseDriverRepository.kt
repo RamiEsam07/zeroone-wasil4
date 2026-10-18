@@ -213,6 +213,22 @@ class SupabaseDriverRepository : DriverRepository {
     override fun toggleLanguage() { _isArabic.value = !_isArabic.value }
     override fun simulateNewIncomingOrder() { /* disabled in production */ }
 
+    suspend fun updateServerLocation(latitude: Double, longitude: Double) = withContext(Dispatchers.IO) {
+        require(latitude in -90.0..90.0 && longitude in -180.0..180.0) {
+            "موقع GPS غير صالح."
+        }
+        val session = requireSession()
+        client.rest(
+            "rest/v1/rpc/wasil_driver_update_location",
+            method = "POST",
+            body = JSONObject()
+                .put("p_latitude", latitude)
+                .put("p_longitude", longitude)
+                .toString(),
+            accessToken = session.accessToken,
+        ).getOrThrow()
+    }
+
     suspend fun refreshLiveData() = withContext(Dispatchers.IO) { refreshAll() }
 
     private suspend fun refreshAll() {
