@@ -98,6 +98,10 @@ class DriverViewModel(
     suspend fun loginWithSupabase(): Result<DriverUser> =
         repository.login("", VehicleType.MOTORCYCLE)
 
+    suspend fun refreshSupabaseData() {
+        (repository as? SupabaseDriverRepository)?.refreshLiveData()
+    }
+
     fun login(phone: String, vehicleType: VehicleType) {
         viewModelScope.launch {
             repository.login(phone, vehicleType)
