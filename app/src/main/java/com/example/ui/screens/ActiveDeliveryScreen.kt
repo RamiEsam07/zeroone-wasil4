@@ -269,7 +269,8 @@ fun ActiveDeliveryScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Cancel / Report Issue Button
+            // Assignment can only be released before pickup; later issues must go through support.
+            if (order.status == DeliveryStatus.ASSIGNED) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -293,6 +294,7 @@ fun ActiveDeliveryScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+            }
             }
         }
 
